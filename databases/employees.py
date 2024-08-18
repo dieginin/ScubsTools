@@ -12,25 +12,11 @@ class Employees:
     def add(self, name: str, initials: str, color: str) -> str:
         id = Database.get_next_id(self.__table)
 
-        # Check if an employee with the same name, initials, and color already exists
-        existing_employee = self.__table.search(
-            (Query().name == name)
-            & (Query().initials == initials)
-            & (Query().color == color)
-        )
-        if existing_employee:
-            return f"Employee with Name '{name}', Initials '{initials}', and Color '{color}' already exists."
-
-        # Check for individual duplicates
-        existing_name = self.__table.search(Query().name == name)
-        if existing_name:
-            return f"Employee with Name '{name}' already exists."
-        existing_initials = self.__table.search(Query().initials == initials)
-        if existing_initials:
-            return f"Employee with Initials '{initials}' already exists."
-        existing_color = self.__table.search(Query().color == color)
-        if existing_color:
-            return f"Employee with Color '{color}' already exists."
+        # Check if an employee already exists
+        if existing_employee := Database.check_existence(
+            self.__table, name=name, initials=initials, color=color
+        ):
+            return existing_employee
 
         # Add new employee if no duplicates found
         self.__table.insert(
