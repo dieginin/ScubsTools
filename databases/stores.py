@@ -13,10 +13,10 @@ class Stores:
         id = Database.get_next_id(self.__table)
 
         # Check if an store already exists
-        if existing_employee := Database.check_existence(
+        if existing_store := Database.check_existence(
             self.__table, name=name, initials=initials
         ):
-            return existing_employee
+            return existing_store
 
         # Add new store if no duplicates found
         self.__table.insert({"id": id, "name": name, "initials": initials})
