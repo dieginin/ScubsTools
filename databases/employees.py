@@ -1,22 +1,16 @@
-from tinydb import Query, TinyDB
+from tinydb import Query
 
 from models import Employee
+
+from .database import Database
 
 
 class Employees:
     def __init__(self):
-        self.__db = TinyDB("database.json")
-        self.__table = self.__db.table("employees")
-
-    def __get_next_id(self) -> int:
-        """Retrieve the next available employee ID."""
-        if not self.__table.all():
-            return 1
-        max_id = max(employee["id"] for employee in self.__table.all())
-        return max_id + 1
+        self.__table = Database().db.table("employees")
 
     def add(self, name: str, initials: str, color: str) -> str:
-        id = self.__get_next_id()
+        id = Database.get_next_id(self.__table)
 
         # Check if an employee with the same name, initials, and color already exists
         existing_employee = self.__table.search(
