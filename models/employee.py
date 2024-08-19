@@ -9,4 +9,4 @@ class Employee:
         return self.name
 
     def __str__(self) -> str:
-        return f"ID: {self.id}, Name: {self.name}, Initials: {self.initials}, Color: {self.color}"
+        return self.name
