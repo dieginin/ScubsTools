@@ -16,6 +16,12 @@ class Stores:
             key=lambda sto: sto.name,
         )
 
+    def get(self, id: int) -> Store | None:
+        store = self.__table.get(Query().id == id)
+        if not store:
+            return None
+        return Store.from_dict(store)  # type: ignore
+
     def add(self, name: str, initials: str) -> str:
         id = Database.get_next_id(self.__table)
 
