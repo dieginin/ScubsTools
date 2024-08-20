@@ -11,14 +11,6 @@ class Employee:
     def __str__(self) -> str:
         return self.name
 
-    def to_dict(self) -> dict:
-        return {
-            "id": self.id,
-            "name": self.name,
-            "initials": self.initials,
-            "color": self.color,
-        }
-
     @classmethod
     def from_dict(cls, data: dict) -> "Employee":
         return cls(
