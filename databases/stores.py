@@ -9,6 +9,13 @@ class Stores:
     def __init__(self):
         self.__table = Database().db.table("stores")
 
+    @property
+    def list(self) -> list[Store]:
+        return sorted(
+            [Store.from_dict(sto) for sto in self.__table.all()],
+            key=lambda sto: sto.name,
+        )
+
     def add(self, name: str, initials: str) -> str:
         id = Database.get_next_id(self.__table)
 
@@ -27,13 +34,3 @@ class Stores:
             return f"Store {store.name} removed."
         else:
             return f"Store not found."
-
-    @property
-    def list(self) -> list[Store]:
-        return sorted(
-            [
-                Store(sto["id"], sto["name"], sto["initials"])
-                for sto in self.__table.all()
-            ],
-            key=lambda sto: sto.name,
-        )
