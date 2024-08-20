@@ -9,6 +9,19 @@ class Employees:
     def __init__(self):
         self.__table = Database().db.table("employees")
 
+    @property
+    def list(self) -> list[Employee]:
+        return sorted(
+            [Employee.from_dict(emp) for emp in self.__table.all()],
+            key=lambda emp: emp.name,
+        )
+
+    def get(self, id: int) -> Employee | None:
+        employee = self.__table.get(Query().id == id)
+        if not employee:
+            return None
+        return Employee.from_dict(employee)  # type: ignore
+
     def add(self, name: str, initials: str, color: str) -> str:
         id = Database.get_next_id(self.__table)
 
@@ -29,13 +42,3 @@ class Employees:
             return f"Employee {employee.name} removed."
         else:
             return f"Employee not found."
-
-    @property
-    def list(self) -> list[Employee]:
-        return sorted(
-            [
-                Employee(emp["id"], emp["name"], emp["initials"], emp["color"])
-                for emp in self.__table.all()
-            ],
-            key=lambda emp: emp.name,
-        )
