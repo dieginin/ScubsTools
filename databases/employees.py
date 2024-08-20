@@ -16,6 +16,12 @@ class Employees:
             key=lambda emp: emp.name,
         )
 
+    def get(self, id: int) -> Employee | None:
+        employee = self.__table.get(Query().id == id)
+        if not employee:
+            return None
+        return Employee.from_dict(employee)  # type: ignore
+
     def add(self, name: str, initials: str, color: str) -> str:
         id = Database.get_next_id(self.__table)
 
