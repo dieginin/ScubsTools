@@ -1,6 +1,7 @@
 from typing import Dict, List, Optional
 
 from .employee import Employee
+from .store import Store
 
 
 class MoneyCount:
@@ -51,14 +52,11 @@ class EmployeeTime:
         self.time = time
 
     def to_dict(self) -> dict:
-        return {"employee": self.employee.id, "time": self.time}
+        return {"employee": self.employee.to_dict(), "time": self.time}
 
     @classmethod
     def from_dict(cls, data: dict) -> "EmployeeTime":
-        from databases.employees import Employees
-
-        employee = Employees().get(data["employee"]) or Employee(0, "", "", "")
-        return cls(employee=employee, time=data["time"])
+        return cls(employee=Employee.from_dict(data["employee"]), time=data["time"])
 
 
 class Schedule:
@@ -127,6 +125,7 @@ class SalesReport:
         self,
         id: int,
         date: str,
+        store: Store,
         schedule: Schedule,
         money_open: MoneyCount,
         counts_open: Counts,
@@ -137,6 +136,7 @@ class SalesReport:
     ) -> None:
         self.id = id
         self.date = date
+        self.store = store
         self.schedule = schedule
         self.money_open = money_open
         self.money_close = money_close
@@ -156,6 +156,7 @@ class SalesReport:
         return cls(
             id=data["id"],
             date=data["date"],
+            store=Store.from_dict(data["store"]),
             schedule=Schedule.from_dict(data["schedule"]),
             money_open=MoneyCount.from_dict(data["money_open"]),
             counts_open=Counts.from_dict(data["counts_open"]),
