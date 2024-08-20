@@ -44,7 +44,7 @@ class SalesReports:
             {
                 "id": id,
                 "date": today_date,
-                "store": store.to_dict(),
+                "store": store.id,
                 "schedule": schedule.to_dict(),
                 "money_open": money_count.to_dict(),
                 "counts_open": counts.to_dict(),
@@ -75,5 +75,4 @@ class SalesReports:
             },
             Query().id == sales_report.id,
         )
-
         return f"Store's sales report {sales_report.id} closed."
