@@ -10,3 +10,12 @@ class Employee:
 
     def __str__(self) -> str:
         return self.name
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "Employee":
+        return cls(
+            id=data["id"],
+            name=data["name"],
+            initials=data["initials"],
+            color=data["color"],
+        )
