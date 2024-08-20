@@ -52,11 +52,16 @@ class EmployeeTime:
         self.time = time
 
     def to_dict(self) -> dict:
-        return {"employee": self.employee.to_dict(), "time": self.time}
+        return {"employee": self.employee.id, "time": self.time}
 
     @classmethod
     def from_dict(cls, data: dict) -> "EmployeeTime":
-        return cls(employee=Employee.from_dict(data["employee"]), time=data["time"])
+        from databases import Employees
+
+        return cls(
+            employee=Employees().get(data["employee"]) or Employee(0, "", "", ""),
+            time=data["time"],
+        )
 
 
 class Schedule:
@@ -153,10 +158,12 @@ class SalesReport:
 
     @classmethod
     def from_dict(cls, data: dict) -> "SalesReport":
+        from databases import Stores
+
         return cls(
             id=data["id"],
             date=data["date"],
-            store=Store.from_dict(data["store"]),
+            store=Stores().get(data["store"]) or Store(0, "", ""),
             schedule=Schedule.from_dict(data["schedule"]),
             money_open=MoneyCount.from_dict(data["money_open"]),
             counts_open=Counts.from_dict(data["counts_open"]),
