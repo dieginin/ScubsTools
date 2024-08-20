@@ -28,12 +28,6 @@ class SalesReports:
             )
         return False
 
-    def get(self, date: str) -> SalesReport | None:
-        report = self.__table.get(Query().date == date)
-        if not report:
-            return None
-        return SalesReport.from_dict(report)  # type: ignore
-
     def open(
         self, store: Store, schedule: Schedule, money_count: MoneyCount, counts: Counts
     ) -> str:
