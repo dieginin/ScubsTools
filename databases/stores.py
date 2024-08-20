@@ -29,6 +29,20 @@ class Stores:
         self.__table.insert({"id": id, "name": name, "initials": initials})
         return f"Store {name} added with ID {id}."
 
+    def edit(
+        self, store: Store, name: str | None = None, initials: str | None = None
+    ) -> str:
+        if existing_store := Database.check_existence(
+            self.__table, name=name, initials=initials
+        ):
+            return existing_store
+
+        self.__table.update(
+            {"name": name or store.name, "initials": initials or store.initials},
+            Query().id == store.id,
+        )
+        return f"Store {name or store.name} updated."
+
     def remove(self, store: Store) -> str:
         if self.__table.remove(Query().id == store.id):
             return f"Store {store.name} removed."
