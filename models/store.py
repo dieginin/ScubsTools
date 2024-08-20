@@ -10,6 +10,9 @@ class Store:
     def __str__(self) -> str:
         return self.name
 
+    def to_dict(self) -> dict:
+        return {"id": self.id, "name": self.name, "initials": self.initials}
+
     @classmethod
     def from_dict(cls, data: dict) -> "Store":
         return cls(id=data["id"], name=data["name"], initials=data["initials"])
