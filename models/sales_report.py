@@ -1,4 +1,5 @@
-from datetime import datetime, date as dt
+from datetime import date as dt
+from datetime import datetime, time
 from typing import Dict, List, Optional
 
 from .employee import Employee
@@ -48,12 +49,12 @@ class Counts:
 
 
 class EmployeeTime:
-    def __init__(self, employee: Employee, time: str):
+    def __init__(self, employee: Employee, time: time):
         self.employee = employee
         self.time = time
 
     def to_dict(self) -> dict:
-        return {"employee": self.employee.id, "time": self.time}
+        return {"employee": self.employee.id, "time": self.time.strftime("%H:%M")}
 
     @classmethod
     def from_dict(cls, data: dict) -> "EmployeeTime":
@@ -61,7 +62,7 @@ class EmployeeTime:
 
         return cls(
             employee=Employees().get(data["employee"]) or Employee(0, "", "", ""),
-            time=data["time"],
+            time=datetime.strptime(data["time"], "%H:%M").time(),
         )
 
 
@@ -69,6 +70,19 @@ class Schedule:
     def __init__(self, arrivals: List[EmployeeTime], departures: List[EmployeeTime]):
         self.arrivals = arrivals
         self.departures = departures
+
+    @property
+    def working_hours(self) -> tuple[time, time]:
+        open_hr = time(23, 0)
+        for arrival in self.arrivals:
+            if arrival.time < open_hr:
+                open_hr = arrival.time
+
+        close_hr = time(0, 0)
+        for departure in self.departures:
+            if departure.time > close_hr:
+                close_hr = departure.time
+        return open_hr, close_hr
 
     def to_dict(self) -> dict:
         return {
@@ -163,7 +177,7 @@ class SalesReport:
 
         return cls(
             id=data["id"],
-            date=datetime.strptime(data['date'], "%Y-%m-%d").date(),
+            date=datetime.strptime(data["date"], "%Y-%m-%d").date(),
             store=Stores().get(data["store"]) or Store(0, "", ""),
             schedule=Schedule.from_dict(data["schedule"]),
             money_open=MoneyCount.from_dict(data["money_open"]),
