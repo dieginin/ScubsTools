@@ -1,3 +1,4 @@
+from datetime import datetime, date as dt
 from typing import Dict, List, Optional
 
 from .employee import Employee
@@ -129,7 +130,7 @@ class SalesReport:
     def __init__(
         self,
         id: int,
-        date: str,
+        date: dt,
         store: Store,
         schedule: Schedule,
         money_open: MoneyCount,
@@ -151,10 +152,10 @@ class SalesReport:
         self.sales = sales
 
     def __repr__(self) -> str:
-        return self.date
+        return self.date.strftime("%Y-%m-%d")
 
     def __str__(self) -> str:
-        return self.date
+        return self.date.strftime("%Y-%m-%d")
 
     @classmethod
     def from_dict(cls, data: dict) -> "SalesReport":
@@ -162,7 +163,7 @@ class SalesReport:
 
         return cls(
             id=data["id"],
-            date=data["date"],
+            date=datetime.strptime(data['date'], "%Y-%m-%d").date(),
             store=Stores().get(data["store"]) or Store(0, "", ""),
             schedule=Schedule.from_dict(data["schedule"]),
             money_open=MoneyCount.from_dict(data["money_open"]),
