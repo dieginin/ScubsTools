@@ -60,10 +60,10 @@ class SalesReports:
         returns: Movements,
         sales: Movements,
     ) -> str:
-        if not self.__check_open(sales_report.date):
+        if not self.__check_open(sales_report.date.strftime("%Y-%m-%d")):
             return "The store hasn't open yet."
 
-        if self.__check_close(sales_report.date):
+        if self.__check_close(sales_report.date.strftime("%Y-%m-%d")):
             return "The store already closed."
 
         self.__table.update(
