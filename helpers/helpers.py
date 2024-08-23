@@ -20,13 +20,13 @@ def get_today_date() -> str:
     return datetime.now().strftime("%Y-%m-%d")
 
 
-def count_money(bill_counts: Dict[int, int], cent_counts: Dict[int, int]) -> float:
+def count_money(bill_counts: Dict[str, int], cent_counts: Dict[str, int]) -> float:
     """Retrive the sum of money of the bills and cents given."""
     bill_count = 0
     for denom, count in bill_counts.items():
-        bill_count += denom * count
+        bill_count += int(denom) * count
 
     cent_count = 0
     for denom, count in cent_counts.items():
-        cent_count += (denom / 100) * count
+        cent_count += (int(denom) / 100) * count
     return bill_count + cent_count

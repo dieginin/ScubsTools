@@ -7,7 +7,7 @@ from .store import Store
 
 
 class MoneyCount:
-    def __init__(self, bills: Dict[int, int], cents: Dict[int, int]):
+    def __init__(self, bills: Dict[str, int], cents: Dict[str, int]):
         self.bills = bills
         self.cents = cents
 
