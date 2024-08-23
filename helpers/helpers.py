@@ -28,5 +28,5 @@ def count_money(bill_counts: Dict[str, int], cent_counts: Dict[str, int]) -> flo
 
     cent_count = 0
     for denom, count in cent_counts.items():
-        cent_count += (int(denom) / 100) * count
+        cent_count += ((int(denom) / 100) * count) if count > 0 else 0
     return bill_count + cent_count
