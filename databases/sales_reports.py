@@ -1,7 +1,5 @@
 from reportlab.lib import colors
-from reportlab.lib.enums import TA_CENTER
 from reportlab.lib.pagesizes import letter
-from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.units import inch
 from reportlab.platypus import (
     Image,
@@ -25,7 +23,7 @@ class SalesReports:
         self.__table = Database().db.table("sales_reports")
 
     @property
-    def list(self) -> list[SalesReport]:
+    def sales_report_list(self) -> list[SalesReport]:
         return sorted(
             [SalesReport.from_dict(sr) for sr in self.__table.all()],
             key=lambda sr: sr.date,
@@ -91,10 +89,118 @@ class SalesReports:
         return f"Store's sales report {sales_report.id} closed."
 
     def generate_report(self, sales_report: SalesReport):
-        # Elements container
-        elements = []
+        def __create_table(
+            data: list[list],
+            style: list[tuple],
+            colWidths: list | None = None,
+            rowHeights: list | None = None,
+            spaceBefore: float | None = None,
+        ) -> Table:
+            create_style = lambda s: TableStyle(s)
 
-        # Create PDF
+            return Table(
+                data,
+                colWidths,
+                rowHeights,
+                create_style(style),
+                spaceBefore=spaceBefore,
+            )
+
+        def __create_counts_table(
+            money: MoneyCount | None, counts: Counts | None
+        ) -> Table:
+            bills = money.bills if money else {}
+            cents = money.cents if money else {}
+            gift_cards = counts.gift_cards if counts else None
+
+            return __create_table(
+                data=[
+                    ["$100", bills.get("100", 0), "¢25", cents.get("25", 0)],
+                    ["$50", bills.get("50", 0), "¢10", cents.get("10", 0)],
+                    ["$20", bills.get("20", 0), "¢5", cents.get("5", 0)],
+                    ["$10", bills.get("10", 0), "¢1", cents.get("1", 0)],
+                    ["$5", bills.get("5", 0), "Gift cards", ""],
+                    [
+                        "$2",
+                        bills.get("2", 0),
+                        50,
+                        gift_cards.fifty if gift_cards else 0,
+                    ],
+                    [
+                        "$1",
+                        bills.get("1", 0),
+                        25,
+                        gift_cards.t_five if gift_cards else 0,
+                    ],
+                    ["Littmanns", "", counts.littmanns if counts else 0, ""],
+                    ["Total", "", f"${count_money(bills, cents)}", ""],
+                ],
+                style=[
+                    ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+                    ("ALIGN", (0, -2), (1, -1), "RIGHT"),
+                    ("BOX", (2, -5), (-1, -3), 0.5, colors.grey),
+                    ("FONTNAME", (0, 0), (0, -1), "Helvetica-Bold"),
+                    ("FONTNAME", (-2, 0), (-2, -3), "Helvetica-Bold"),
+                    ("LINEABOVE", (2, -4), (-1, -4), 0.5, colors.grey),
+                    ("SPAN", (2, 4), (-1, 4)),
+                    ("SPAN", (2, -1), (-1, -1)),
+                    ("SPAN", (0, -2), (1, -2)),
+                    ("SPAN", (0, -1), (1, -1)),
+                    ("SPAN", (-2, -2), (-1, -2)),
+                    ("TEXTCOLOR", (1, 0), (1, -3), colors.grey),
+                    ("TEXTCOLOR", (3, 0), (3, -3), colors.grey),
+                    ("TEXTCOLOR", (2, -2), (2, -1), colors.grey),
+                ],
+            )
+
+        def __create_movements_table(title: str, movements: Movements | None) -> Table:
+            if movements:
+                amounts = [
+                    movements.card.amount,
+                    movements.cash.amount,
+                    movements.gift.amount,
+                ]
+                counts = [movements.card.qty, movements.cash.qty, movements.gift.qty]
+                count = movements.count
+                amount = movements.amount
+            else:
+                amounts = [0, 0, 0]
+                counts = [0, 0, 0]
+                count = 0
+                amount = 0
+            return __create_table(
+                data=[
+                    [title, "", ""],
+                    ["Cash", "Card", "Gift card"],
+                    counts,
+                    [f"${amounts[0]}", f"${amounts[1]}", f"${amounts[2]}"],
+                    [f"{count}  ◊  ${amount}", "", ""],
+                ],
+                style=[
+                    ("SPAN", (0, 0), (-1, 0)),
+                    ("SPAN", (0, -1), (-1, -1)),
+                    ("FONTNAME", (0, 0), (-1, 1), "Helvetica-Bold"),
+                    # ("FONTNAME", (0, -1), (0, -1), "Helvetica-Bold"),
+                    ("FONTSIZE", (0, 0), (-1, 0), 23),
+                    ("FONTSIZE", (0, 1), (-1, 1), 15),
+                    ("FONTSIZE", (0, -1), (-1, -1), 13),
+                    ("LINEABOVE", (0, -1), (-1, -1), 0.5, colors.grey),
+                    ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+                    ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                    ("TEXTCOLOR", (0, 2), (-1, 2), colors.grey),
+                    ("TEXTCOLOR", (0, -1), (-1, -1), colors.grey),
+                ],
+                colWidths=[1.5 * inch],
+                rowHeights=[
+                    0.65 * inch,
+                    0.45 * inch,
+                    0.28 * inch,
+                    0.28 * inch,
+                    0.35 * inch,
+                ],
+            )
+
+        elements = []
         fie_name = f"sales_report_{sales_report.date}.pdf"
         pdf = SimpleDocTemplate(fie_name, pagesize=letter)
 
@@ -103,20 +209,17 @@ class SalesReports:
         pdf.author = "Diego Balestra"
         pdf.creator = "Scrubs Boutique and More"
 
-        pdf.topMargin = 10
-        pdf.bottomMargin = 10
+        pdf.topMargin = 5
+        pdf.bottomMargin = 5
         pdf.leftMargin = 20
         pdf.rightMargin = 20
 
         ## HEADER ##
-        image_w = 330 / 2.5
-        image_h = 149 / 2.5
-        image = Image("assets/scrubs_logo.png", image_w, image_h)
+        image = Image("assets/scrubs_logo.png", 330 / 2.5, 149 / 2.5)
 
         title_text = """<font name=Helvetica-Bold color=black size=19>Daily Sales Report</font> <font name=Helvetica color=grey size=8>v8</font><br/>
         <font name=Helvetica color=grey size=12>Scrubs Boutique and More LLC</font>"""
-        title_para = Paragraph(title_text)
-        header = ParagraphAndImage(title_para, image, ypad=20)
+        header = ParagraphAndImage(Paragraph(title_text), image, ypad=20)
         elements.append(header)
 
         ## DATA ##
@@ -125,213 +228,51 @@ class SalesReports:
         working_hours = store_close.hour - store_open.hour
         date = sales_report.date.strftime("%B %d, %Y")
 
-        data = [["Store", "Hours", "Date"], [store_name, working_hours, date]]
-        data_style = TableStyle(
-            [
+        data = __create_table(
+            data=[["Store", "Hours", "Date"], [store_name, working_hours, date]],
+            style=[
+                ("ALIGN", (0, 0), (-1, -1), "CENTER"),
                 ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
                 ("FONTSIZE", (0, 0), (-1, 0), 18),
-                ("TEXTCOLOR", (0, 0), (-1, 0), colors.black),
                 ("FONTSIZE", (0, 1), (-1, 1), 14),
+                ("TEXTCOLOR", (0, 0), (-1, 0), colors.black),
                 ("TEXTCOLOR", (0, 1), (-1, 1), colors.grey),
-                ("ALIGN", (0, 0), (-1, -1), "CENTER"),
                 ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-            ]
-        )
-        data_table = Table(
-            data,
-            style=data_style,
-            spaceBefore=75,
+            ],
             colWidths=[2.5 * inch],
             rowHeights=[0.45 * inch, 0.3 * inch],
+            spaceBefore=75,
         )
-        elements.append(data_table)
+        elements.append(data)
 
         ## COUNTS ##
-        # Open counts
-        o_bills = sales_report.money_open.bills
-        o_cents = sales_report.money_open.cents
-        o_counts = sales_report.counts_open
-        open_counts = [
-            ["$100", o_bills["100"], "¢25", o_cents["25"]],
-            ["$50", o_bills["50"], "¢10", o_cents["10"]],
-            ["$20", o_bills["20"], "¢5", o_cents["5"]],
-            ["$10", o_bills["10"], "¢1", o_cents["1"]],
-            ["$5", o_bills["5"], "Gift cards", ""],
-            ["$2", o_bills["2"], 50, o_counts.gift_cards.fifty],
-            ["$1", o_bills["1"], 25, o_counts.gift_cards.t_five],
-            ["Littmanns", "", o_counts.littmanns, ""],
-            ["Total", "", f"${count_money(o_bills, o_cents)}", ""],
-        ]
-        counts_style = TableStyle(
-            [
-                ("SPAN", (2, 4), (-1, 4)),
-                ("SPAN", (0, -1), (1, -1)),
-                ("SPAN", (2, -1), (-1, -1)),
-                ("SPAN", (0, -2), (1, -2)),
-                ("SPAN", (-2, -2), (-1, -2)),
-                ("ALIGN", (0, 0), (-1, -1), "CENTER"),
-                ("ALIGN", (0, -2), (1, -1), "RIGHT"),
-                ("FONTNAME", (0, 0), (0, -1), "Helvetica-Bold"),
-                ("FONTNAME", (-2, 0), (-2, -3), "Helvetica-Bold"),
-                ("BOX", (2, -5), (-1, -3), 0.5, colors.grey),
-                ("LINEABOVE", (2, -4), (-1, -4), 0.5, colors.grey),
-                ("TEXTCOLOR", (1, 0), (1, -3), colors.grey),
-                ("TEXTCOLOR", (3, 0), (3, -3), colors.grey),
-                ("TEXTCOLOR", (2, -2), (2, -1), colors.grey),
-            ]
+        open_counts = __create_counts_table(
+            sales_report.money_open, sales_report.counts_open
         )
-        open_counts_table = Table(open_counts, style=counts_style)
+        close_counts = __create_counts_table(
+            sales_report.money_close, sales_report.counts_close
+        )
 
-        # Close counts
-        money_close = sales_report.money_close
-        if money_close:
-            c_bills = money_close.bills
-            c_cents = money_close.cents
-        else:
-            c_bills = {}
-            c_cents = {}
-
-        c_counts = sales_report.counts_close
-        if c_counts:
-            fifty = c_counts.gift_cards.fifty
-            t_five = c_counts.gift_cards.t_five
-            littmanns = c_counts.littmanns
-        else:
-            fifty = 0
-            t_five = 0
-            littmanns = 0
-
-        close_counts = [
-            ["$100", c_bills.get("100", 0), "¢25", c_cents.get("25", 0)],
-            ["$50", c_bills.get("50", 0), "¢10", c_cents.get("10", 0)],
-            ["$20", c_bills.get("20", 0), "¢5", c_cents.get("5", 0)],
-            ["$10", c_bills.get("10", 0), "¢1", c_cents.get("1", 0)],
-            ["$5", c_bills.get("5", 0), "Gift cards", ""],
-            ["$2", c_bills.get("2", 0), 50, fifty],
-            ["$1", c_bills.get("1", 0), 25, t_five],
-            ["Littmanns", "", littmanns, ""],
-            ["Total", "", f"${count_money(c_bills, c_cents)}", ""],
-        ]
-        close_counts_table = Table(close_counts, style=counts_style)
-
-        # Counts
-        counts = [
-            ["Open Money", "Close Money"],
-            [open_counts_table, close_counts_table],
-        ]
-        counts_style = TableStyle(
-            [
+        counts = __create_table(
+            data=[["Open Money", "Close Money"], [open_counts, close_counts]],
+            style=[
+                ("ALIGN", (0, 0), (-1, -1), "CENTER"),
                 ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
                 ("FONTSIZE", (0, 0), (-1, 0), 23),
-                ("ALIGN", (0, 0), (-1, -1), "CENTER"),
                 ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-            ]
-        )
-        counts_table = Table(
-            counts,
-            style=counts_style,
-            spaceBefore=30,
+            ],
             rowHeights=[0.5 * inch, 2.75 * inch],
+            spaceBefore=30,
         )
-        elements.append(counts_table)
+        elements.append(counts)
 
-        # Sales
-        s_data = sales_report.sales
-        if s_data:
-            card_amount = s_data.card.amount
-            cash_amount = s_data.cash.amount
-            gift_amount = s_data.gift.amount
-            card_count = s_data.card.qty
-            cash_count = s_data.cash.qty
-            gift_count = s_data.gift.qty
-            count = s_data.count
-            amount = s_data.amount
-        else:
-            card_amount = 0
-            cash_amount = 0
-            gift_amount = 0
-            card_count = 0
-            cash_count = 0
-            gift_count = 0
-            count = 0
-            amount = 0
-        sales = [
-            ["Sales", "", ""],
-            ["Cash", "Card", "Gift card"],
-            [cash_count, card_count, gift_count],
-            [f"${cash_amount}", f"${card_amount}", f"${gift_amount}"],
-            [f"{count} 〈-〉 ${amount}", "", ""],
-        ]
-        movements_style = TableStyle(
-            [
-                ("SPAN", (0, 0), (-1, 0)),
-                ("SPAN", (0, -1), (-1, -1)),
-                ("FONTNAME", (0, 0), (-1, 1), "Helvetica-Bold"),
-                # ("FONTNAME", (0, -1), (0, -1), "Helvetica-Bold"),
-                ("FONTSIZE", (0, 0), (-1, 0), 23),
-                ("FONTSIZE", (0, 1), (-1, 1), 15),
-                ("FONTSIZE", (0, -1), (-1, -1), 13),
-                ("LINEABOVE", (0, -1), (-1, -1), 0.5, colors.grey),
-                ("ALIGN", (0, 0), (-1, -1), "CENTER"),
-                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-                ("TEXTCOLOR", (0, 2), (-1, 2), colors.grey),
-                ("TEXTCOLOR", (0, -1), (-1, -1), colors.grey),
-            ]
-        )
-        sales_table = Table(
-            sales,
-            style=movements_style,
-            rowHeights=[
-                0.65 * inch,
-                0.45 * inch,
-                0.28 * inch,
-                0.28 * inch,
-                0.35 * inch,
-            ],
-            colWidths=[1.5 * inch],
-        )
-        elements.append(sales_table)
+        ## SALES ##
+        sales = __create_movements_table("Sales", sales_report.sales)
+        elements.append(sales)
 
-        # Returns
-        r_data = sales_report.returns
-        if r_data:
-            card_amount = r_data.card.amount
-            cash_amount = r_data.cash.amount
-            gift_amount = r_data.gift.amount
-            card_count = r_data.card.qty
-            cash_count = r_data.cash.qty
-            gift_count = r_data.gift.qty
-            count = r_data.count
-            amount = r_data.amount
-        else:
-            card_amount = 0
-            cash_amount = 0
-            gift_amount = 0
-            card_count = 0
-            cash_count = 0
-            gift_count = 0
-            count = 0
-            amount = 0
-        returns = [
-            ["Returns", "", ""],
-            ["Cash", "Card", "Gift card"],
-            [cash_count, card_count, gift_count],
-            [f"${cash_amount}", f"${card_amount}", f"${gift_amount}"],
-            [f"{count} 〈-〉 ${amount}", "", ""],
-        ]
-        returns_table = Table(
-            returns,
-            style=movements_style,
-            rowHeights=[
-                0.65 * inch,
-                0.45 * inch,
-                0.28 * inch,
-                0.28 * inch,
-                0.35 * inch,
-            ],
-            colWidths=[1.5 * inch],
-        )
-        elements.append(returns_table)
+        ## RETURNS ##
+        returns = __create_movements_table("Returns", sales_report.returns)
+        elements.append(returns)
 
-        # Save PDF
+        ## SAVE PDF ##
         pdf.build(elements)
