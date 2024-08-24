@@ -241,7 +241,7 @@ class SalesReports:
             ],
             colWidths=[2.5 * inch],
             rowHeights=[0.45 * inch, 0.3 * inch],
-            spaceBefore=75,
+            spaceBefore=65,
         )
         elements.append(data)
 
