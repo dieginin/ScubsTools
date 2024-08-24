@@ -230,13 +230,108 @@ class SalesReports:
         counts_table = Table(
             counts,
             style=counts_style,
-            spaceBefore=50,
+            spaceBefore=30,
             rowHeights=[0.5 * inch, 2.75 * inch],
         )
         elements.append(counts_table)
 
-        # Returns
         # Sales
+        s_data = sales_report.sales
+        if s_data:
+            card_amount = s_data.card.amount
+            cash_amount = s_data.cash.amount
+            gift_amount = s_data.gift.amount
+            card_count = s_data.card.qty
+            cash_count = s_data.cash.qty
+            gift_count = s_data.gift.qty
+            count = s_data.count
+            amount = s_data.amount
+        else:
+            card_amount = 0
+            cash_amount = 0
+            gift_amount = 0
+            card_count = 0
+            cash_count = 0
+            gift_count = 0
+            count = 0
+            amount = 0
+        sales = [
+            ["Sales", "", ""],
+            ["Cash", "Card", "Gift card"],
+            [cash_count, card_count, gift_count],
+            [f"${cash_amount}", f"${card_amount}", f"${gift_amount}"],
+            [f"{count} 〈-〉 ${amount}", "", ""],
+        ]
+        movements_style = TableStyle(
+            [
+                ("SPAN", (0, 0), (-1, 0)),
+                ("SPAN", (0, -1), (-1, -1)),
+                ("FONTNAME", (0, 0), (-1, 1), "Helvetica-Bold"),
+                # ("FONTNAME", (0, -1), (0, -1), "Helvetica-Bold"),
+                ("FONTSIZE", (0, 0), (-1, 0), 23),
+                ("FONTSIZE", (0, 1), (-1, 1), 15),
+                ("FONTSIZE", (0, -1), (-1, -1), 13),
+                ("LINEABOVE", (0, -1), (-1, -1), 0.5, colors.grey),
+                ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                ("TEXTCOLOR", (0, 2), (-1, 2), colors.grey),
+                ("TEXTCOLOR", (0, -1), (-1, -1), colors.grey),
+            ]
+        )
+        sales_table = Table(
+            sales,
+            style=movements_style,
+            rowHeights=[
+                0.65 * inch,
+                0.45 * inch,
+                0.28 * inch,
+                0.28 * inch,
+                0.35 * inch,
+            ],
+            colWidths=[1.5 * inch],
+        )
+        elements.append(sales_table)
+
+        # Returns
+        r_data = sales_report.returns
+        if r_data:
+            card_amount = r_data.card.amount
+            cash_amount = r_data.cash.amount
+            gift_amount = r_data.gift.amount
+            card_count = r_data.card.qty
+            cash_count = r_data.cash.qty
+            gift_count = r_data.gift.qty
+            count = r_data.count
+            amount = r_data.amount
+        else:
+            card_amount = 0
+            cash_amount = 0
+            gift_amount = 0
+            card_count = 0
+            cash_count = 0
+            gift_count = 0
+            count = 0
+            amount = 0
+        returns = [
+            ["Returns", "", ""],
+            ["Cash", "Card", "Gift card"],
+            [cash_count, card_count, gift_count],
+            [f"${cash_amount}", f"${card_amount}", f"${gift_amount}"],
+            [f"{count} 〈-〉 ${amount}", "", ""],
+        ]
+        returns_table = Table(
+            returns,
+            style=movements_style,
+            rowHeights=[
+                0.65 * inch,
+                0.45 * inch,
+                0.28 * inch,
+                0.28 * inch,
+                0.35 * inch,
+            ],
+            colWidths=[1.5 * inch],
+        )
+        elements.append(returns_table)
 
         # Save PDF
         pdf.build(elements)
