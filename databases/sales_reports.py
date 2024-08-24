@@ -201,8 +201,8 @@ class SalesReports:
             )
 
         elements = []
-        fie_name = f"sales_report_{sales_report.date}.pdf"
-        pdf = SimpleDocTemplate(fie_name, pagesize=letter)
+        file_name = f"sales_report_{sales_report.date}.pdf"
+        pdf = SimpleDocTemplate(file_name, pagesize=letter)
 
         # Set attributes
         pdf.title = "Daily Sales Report"
@@ -276,3 +276,17 @@ class SalesReports:
 
         ## SAVE PDF ##
         pdf.build(elements)
+
+        ## PRINT PDF ##
+        self.print_pdf(file_name)
+
+    def print_pdf(self, file_name: str):
+        import platform
+        import subprocess
+
+        if platform.system() == "Windows":
+            subprocess.run(["print", file_name], shell=True)
+        elif platform.system() == "Darwin":  # macOS
+            subprocess.run(["lp", file_name])
+        else:  # Linux or others
+            subprocess.run(["lp", file_name])
